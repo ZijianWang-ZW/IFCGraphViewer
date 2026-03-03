@@ -68,7 +68,7 @@ VIEWER_INDEX_PATH=/abs/path/parsed_output/viewer/object_index.json \
 VIEWER_FILES_DIR=/abs/path/parsed_output/viewer \
 FRONTEND_DIR=/Users/zijian/Desktop/IFCGraphViewer/frontend \
 VIEWER_MODEL_URL=/viewer-files/model.glb \
-uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 Open:
@@ -88,7 +88,7 @@ VIEWER_INDEX_PATH=/abs/path/parsed_output/viewer/object_index.json \
 VIEWER_FILES_DIR=/abs/path/parsed_output/viewer \
 FRONTEND_DIR=/Users/zijian/Desktop/IFCGraphViewer/frontend \
 VIEWER_MODEL_URL=/viewer-files/model.glb \
-uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
+python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 ## Tests
