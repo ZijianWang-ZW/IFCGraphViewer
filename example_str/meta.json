@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "model_guid": "2vfh4zCQL05vfCDihadyyR",
+    "export_date": "2023-11-21 00:39:05",
+    "source": "IFC4",
+    "application_name": "Tekla Structures",
+    "application_version": "2022",
+    "file_size_mb": 0.347,
+    "object_count": 719,
+    "units": {
+      "length_unit": "mm",
+      "area_unit": "square_metre",
+      "volume_unit": "cubic_metre",
+      "angle_unit": "degree",
+      "mass_unit": "kg"
+    },
+    "geometry_units": {
+      "note": "OBJ geometry files contain vertices in world coordinates (meters). Property values remain in original IFC units as specified above.",
+      "vertices": "meters (world coordinates)",
+      "format": "OBJ + MTL per element",
+      "properties": "original IFC units (see length_unit)"
+    },
+    "processing_info": {
+      "processing_time": 0.0,
+      "processed_date": "2026-03-03T16:40:33.036585"
+    }
+  }
+}

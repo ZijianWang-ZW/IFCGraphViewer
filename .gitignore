@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.DS_Store
+.playwright-cli/
+.pytest_cache/
+.venv/
+docs/*report.json
+example_str/graph_import_report.json

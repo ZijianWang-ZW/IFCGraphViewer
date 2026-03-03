@@ -1,0 +1,8 @@
+ifcopenshell
+numpy
+pandas
+pygltflib
+neo4j
+fastapi
+uvicorn
+httpx
