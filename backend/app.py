@@ -18,6 +18,39 @@ from backend.services.neo4j_store import Neo4jGraphStore
 from backend.services.viewer_index import ViewerIndexRepository
 
 
+def _validate_viewer_graph_alignment(service: GraphService, settings: Settings) -> None:
+    """Validate viewer index IDs overlap with graph object IDs at startup."""
+    if not settings.viewer_index_path:
+        return
+
+    viewer_index = service.get_viewer_index()
+    if not isinstance(viewer_index, dict) or not viewer_index:
+        return
+
+    max_check = min(settings.viewer_index_validation_sample_size, len(viewer_index))
+    viewer_ids = list(viewer_index.keys())[:max_check]
+    if not viewer_ids:
+        return
+
+    summaries = service.store.get_building_object_summaries(viewer_ids)
+    matched_ids = {
+        row.get("GlobalId")
+        for row in summaries
+        if isinstance(row, dict) and row.get("GlobalId")
+    }
+    overlap_count = len(matched_ids)
+    if overlap_count >= settings.viewer_index_min_overlap:
+        return
+
+    missing_examples = [gid for gid in viewer_ids if gid not in matched_ids][:5]
+    raise RuntimeError(
+        "Viewer index does not match current graph dataset. "
+        f"overlap={overlap_count}/{len(viewer_ids)} (min required={settings.viewer_index_min_overlap}). "
+        f"Sample missing GlobalIds: {missing_examples}. "
+        "Likely cause: GRAPH_OUTPUT_DIR and viewer assets were built from different IFC models."
+    )
+
+
 def _build_default_service(settings: Settings) -> GraphService:
     if settings.graph_store_mode == "csv":
         if not settings.graph_output_dir:
@@ -33,7 +66,9 @@ def _build_default_service(settings: Settings) -> GraphService:
             database=settings.neo4j_database,
         )
     viewer_repo = ViewerIndexRepository(settings.viewer_index_path)
-    return GraphService(store=store, viewer_index_repo=viewer_repo)
+    service = GraphService(store=store, viewer_index_repo=viewer_repo)
+    _validate_viewer_graph_alignment(service, settings)
+    return service
 
 
 def create_app(service: Optional[GraphService] = None, settings: Optional[Settings] = None) -> FastAPI:
@@ -44,6 +79,8 @@ def create_app(service: Optional[GraphService] = None, settings: Optional[Settin
     async def lifespan(_app: FastAPI):
         if _app.state.graph_service is None:
             _app.state.graph_service = _build_default_service(app_settings)
+        elif _app.state.settings.viewer_index_path:
+            _validate_viewer_graph_alignment(_app.state.graph_service, _app.state.settings)
         try:
             yield
         finally:

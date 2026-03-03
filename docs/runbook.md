@@ -43,6 +43,14 @@ VIEWER_MODEL_URL=/viewer-files/model.glb \
 python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
+Startup consistency guard:
+
+1. Viewer index and graph IDs are validated on startup.
+2. If you see a mismatch error, rebuild `viewer/` from the same IFC model that produced `GRAPH_OUTPUT_DIR`.
+3. Optional env tuning:
+   - `VIEWER_INDEX_MIN_OVERLAP` (default `1`)
+   - `VIEWER_INDEX_VALIDATION_SAMPLE_SIZE` (default `5000`)
+
 ## 5. Run in Neo4j Mode
 
 ```bash

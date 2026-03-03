@@ -20,6 +20,8 @@ class Settings:
     viewer_model_url: str
     frontend_dir: Optional[str]
     api_title: str = "IFC Graph API"
+    viewer_index_min_overlap: int = 1
+    viewer_index_validation_sample_size: int = 5000
 
 
 def load_settings() -> Settings:
@@ -34,4 +36,8 @@ def load_settings() -> Settings:
         viewer_files_dir=os.getenv("VIEWER_FILES_DIR"),
         viewer_model_url=os.getenv("VIEWER_MODEL_URL", "/viewer-files/model.glb"),
         frontend_dir=os.getenv("FRONTEND_DIR", "frontend"),
+        viewer_index_min_overlap=max(0, int(os.getenv("VIEWER_INDEX_MIN_OVERLAP", "1"))),
+        viewer_index_validation_sample_size=max(
+            1, int(os.getenv("VIEWER_INDEX_VALIDATION_SAMPLE_SIZE", "5000"))
+        ),
     )

@@ -71,6 +71,14 @@ VIEWER_MODEL_URL=/viewer-files/model.glb \
 python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
+Startup guard:
+
+1. Backend validates overlap between `VIEWER_INDEX_PATH` and graph object IDs.
+2. If overlap is too low, startup fails with a clear mismatch error.
+3. Tuning knobs:
+   - `VIEWER_INDEX_MIN_OVERLAP` (default `1`)
+   - `VIEWER_INDEX_VALIDATION_SAMPLE_SIZE` (default `5000`)
+
 Open:
 
 1. `http://127.0.0.1:8000/`

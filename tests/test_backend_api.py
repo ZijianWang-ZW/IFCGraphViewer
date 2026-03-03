@@ -194,6 +194,35 @@ class TestBackendAPI(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("frontend-ok", r.text)
 
+    def test_startup_fails_on_viewer_graph_mismatch(self) -> None:
+        mismatch_tmp = tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".json")
+        json.dump({"MISMATCH_GUID": {"node_index": 1, "mesh_index": 0}}, mismatch_tmp)
+        mismatch_tmp.close()
+        mismatch_path = mismatch_tmp.name
+        self.addCleanup(lambda: os.path.exists(mismatch_path) and os.unlink(mismatch_path))
+
+        mismatch_repo = ViewerIndexRepository(mismatch_path)
+        mismatch_service = GraphService(store=FakeGraphStore(), viewer_index_repo=mismatch_repo)
+        mismatch_settings = Settings(
+            graph_store_mode="csv",
+            graph_output_dir=None,
+            neo4j_uri="bolt://localhost:7687",
+            neo4j_user="neo4j",
+            neo4j_password="",
+            neo4j_database="neo4j",
+            viewer_index_path=mismatch_path,
+            viewer_files_dir=None,
+            viewer_model_url="/viewer-files/model.glb",
+            frontend_dir=self.tmp_dir.name,
+            viewer_index_min_overlap=1,
+            viewer_index_validation_sample_size=100,
+        )
+        mismatch_app = create_app(mismatch_service, settings=mismatch_settings)
+
+        with self.assertRaises(RuntimeError):
+            with TestClient(mismatch_app):
+                pass
+
 
 if __name__ == "__main__":
     unittest.main()
