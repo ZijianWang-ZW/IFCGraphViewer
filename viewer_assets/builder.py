@@ -22,7 +22,7 @@ from viewer_assets.utils.color import (
     log_unresolved_summary,
     resolve_colors_for_groups,
 )
-from viewer_assets.utils.parquet2glb import convert_geometry_to_glb
+from viewer_assets.utils.glb_converter import convert_geometry_to_glb
 
 logger = logging.getLogger(__name__)
 

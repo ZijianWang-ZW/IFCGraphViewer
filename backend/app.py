@@ -168,6 +168,3 @@ def create_app(service: Optional[GraphService] = None, settings: Optional[Settin
         raise HTTPException(status_code=404, detail="Frontend not configured")
 
     return app
-
-
-app = create_app()

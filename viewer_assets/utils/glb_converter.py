@@ -196,7 +196,7 @@ class GLBConverter:
         Vertices are already in world coordinates — no per-node transform needed.
         """
         start = time()
-        logger.info(f"[GLB] Converting {len(geometry_data)} elements to GLB")
+        logger.info("[GLB] Converting %d elements to GLB", len(geometry_data))
 
         for idx, item in enumerate(geometry_data):
             guid = item.get('GlobalId', '')
@@ -221,7 +221,7 @@ class GLBConverter:
 
             if (idx + 1) % LOG_PROGRESS_INTERVAL == 0:
                 gc.collect()
-                logger.info(f"[GLB] Processed {idx + 1}/{len(geometry_data)} elements...")
+                logger.info("[GLB] Processed %d/%d elements...", idx + 1, len(geometry_data))
 
         gc.collect()
 
@@ -242,9 +242,9 @@ class GLBConverter:
         file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
         elapsed = time() - start
 
-        logger.info(f"[GLB] Saved: {output_path} ({file_size_mb:.2f} MB)")
-        logger.info(f"[GLB] Nodes: {self.nodes_created}, Meshes: {self.meshes_created}")
-        logger.info(f"[GLB] Skipped: {self.objects_skipped}, Time: {elapsed:.2f}s")
+        logger.info("[GLB] Saved: %s (%.2f MB)", output_path, file_size_mb)
+        logger.info("[GLB] Nodes: %d, Meshes: %d", self.nodes_created, self.meshes_created)
+        logger.info("[GLB] Skipped: %d, Time: %.2fs", self.objects_skipped, elapsed)
 
         return output_path
 

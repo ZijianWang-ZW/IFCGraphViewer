@@ -4,7 +4,7 @@ import os
 import tempfile
 import unittest
 
-from viewer_assets.utils.parquet2glb import convert_geometry_to_glb
+from viewer_assets.utils.glb_converter import convert_geometry_to_glb
 from viewer_assets.builder import _is_excluded_ifc_type, extract_object_index_from_glb
 
 

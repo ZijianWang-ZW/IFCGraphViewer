@@ -1193,10 +1193,6 @@ async function selectObject(globalId, source = 'api') {
     markGraphSelection(globalId);
     clearEdgeSelection();
 
-    if (source !== 'graph') {
-      markGraphSelection(globalId);
-    }
-
     renderBuildingDetails(globalId, detail);
     setText('selectedType', state.objectTypeMap[globalId] || detail.object?.ifcType || '-');
   } catch (err) {

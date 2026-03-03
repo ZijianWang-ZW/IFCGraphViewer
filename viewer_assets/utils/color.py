@@ -204,16 +204,13 @@ def build_style_and_colour_indexes(ifc_model: Any) -> Tuple[Dict[int, List[Any]]
         pass
 
     # Log results
-    logger.info(f"[COLOR_INDEX] IfcStyledItem found: {len(styled_by_item)} item mappings")
-    logger.info(f"[COLOR_INDEX] IfcIndexedColourMap found: {len(indexed_colour_by_item)} color maps (IFC4 feature)")
-    
-    # Log sample mappings (first 3)
+    logger.info("[COLOR_INDEX] IfcStyledItem found: %d item mappings", len(styled_by_item))
+    logger.info("[COLOR_INDEX] IfcIndexedColourMap found: %d color maps (IFC4 feature)", len(indexed_colour_by_item))
+
     if styled_by_item:
-        sample_ids = list(styled_by_item.keys())[:3]
-        logger.debug(f"[COLOR_INDEX] Sample styled_by_item IDs: {sample_ids}")
+        logger.debug("[COLOR_INDEX] Sample styled_by_item IDs: %s", list(styled_by_item.keys())[:3])
     if indexed_colour_by_item:
-        sample_ids = list(indexed_colour_by_item.keys())[:3]
-        logger.debug(f"[COLOR_INDEX] Sample indexed_colour_by_item IDs: {sample_ids}")
+        logger.debug("[COLOR_INDEX] Sample indexed_colour_by_item IDs: %s", list(indexed_colour_by_item.keys())[:3])
 
     return styled_by_item, indexed_colour_by_item
 
@@ -221,7 +218,7 @@ def build_style_and_colour_indexes(ifc_model: Any) -> Tuple[Dict[int, List[Any]]
 def collect_styled_colors_from_obj(obj: Any, styled_by_item: Dict[int, List[Any]], indexed_colour_by_item: Dict[int, Dict[str, Any]]):
     """Extract styled colors from object's representation (IfcStyledItem, IfcIndexedColourMap)."""
     global_id = getattr(obj, 'GlobalId', 'Unknown')
-    logger.debug(f"[STYLED_COLOR] Processing object: {global_id}")
+    logger.debug("[STYLED_COLOR] Processing object: %s", global_id)
     
     styled_colors: List[Dict[str, Any]] = []
 
@@ -273,14 +270,13 @@ def collect_styled_colors_from_obj(obj: Any, styled_by_item: Dict[int, List[Any]
     try:
         if hasattr(obj, 'Representation') and obj.Representation and hasattr(obj.Representation, 'Representations'):
             rep_count = len(obj.Representation.Representations or [])
-            logger.debug(f"[STYLED_COLOR] {global_id}: {rep_count} Representations found")
+            logger.debug("[STYLED_COLOR] %s: %d Representations found", global_id, rep_count)
             for i, rep in enumerate(obj.Representation.Representations or []):
                 if hasattr(rep, 'Items') and rep.Items:
-                    item_count = len(rep.Items)
-                    logger.debug(f"[STYLED_COLOR] {global_id}: Rep[{i}] has {item_count} items")
+                    logger.debug("[STYLED_COLOR] %s: Rep[%d] has %d items", global_id, i, len(rep.Items))
                     for item in rep.Items:
                         item_type = item.is_a() if hasattr(item, 'is_a') else 'Unknown'
-                        logger.debug(f"[STYLED_COLOR] {global_id}: Processing item type: {item_type}")
+                        logger.debug("[STYLED_COLOR] %s: Processing item type: %s", global_id, item_type)
                         collect_from_item(item)
     except Exception:
         pass
@@ -297,10 +293,10 @@ def collect_styled_colors_from_obj(obj: Any, styled_by_item: Dict[int, List[Any]
     except Exception:
         pass
 
-    logger.debug(f"[STYLED_COLOR] {global_id}: Found {len(styled_colors)} styled colors")
+    logger.debug("[STYLED_COLOR] %s: Found %d styled colors", global_id, len(styled_colors))
     if styled_colors:
-        for i, sc in enumerate(styled_colors[:3]):  # Log first 3
-            logger.debug(f"[STYLED_COLOR] {global_id}: Color[{i}] = RGBA{sc['rgba']}, mat={sc.get('material_name')}")
+        for i, sc in enumerate(styled_colors[:3]):
+            logger.debug("[STYLED_COLOR] %s: Color[%d] = RGBA%s, mat=%s", global_id, i, sc['rgba'], sc.get('material_name'))
 
     return styled_colors
 
@@ -371,7 +367,7 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
     Handles IfcMaterialLayerSetUsage with DirectionSense layer selection.
     """
     global_id = getattr(obj, 'GlobalId', 'Unknown')
-    logger.debug(f"[MATERIAL_COLOR] Processing object: {global_id}")
+    logger.debug("[MATERIAL_COLOR] Processing object: %s", global_id)
     
     collected: List[Dict[str, Any]] = []
     
@@ -381,14 +377,14 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
             return []
         
         mat_type = material.is_a() if hasattr(material, 'is_a') else 'Unknown'
-        logger.debug(f"[MATERIAL_COLOR] {global_id}: Material type: {mat_type}")
+        logger.debug("[MATERIAL_COLOR] %s: Material type: %s", global_id, mat_type)
         
         # Special handling for IfcMaterialLayerSetUsage
         if material.is_a('IfcMaterialLayerSetUsage'):
             try:
                 layer_set = getattr(material, 'ForLayerSet', None)
                 direction_sense = getattr(material, 'DirectionSense', None)
-                logger.debug(f"[MATERIAL_COLOR] {global_id}: DirectionSense={direction_sense} (IFC4 layer selection)")
+                logger.debug("[MATERIAL_COLOR] %s: DirectionSense=%s (IFC4 layer selection)", global_id, direction_sense)
                 
                 if layer_set and hasattr(layer_set, 'MaterialLayers'):
                     layers = layer_set.MaterialLayers
@@ -396,10 +392,10 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
                         # Select visible layer: NEGATIVE = last layer, POSITIVE = first layer
                         if direction_sense == 'NEGATIVE':
                             visible_layer = layers[-1]
-                            logger.debug(f"[MATERIAL_COLOR] {global_id}: Selected LAST layer (NEGATIVE sense)")
+                            logger.debug("[MATERIAL_COLOR] %s: Selected LAST layer (NEGATIVE sense)", global_id)
                         else:
                             visible_layer = layers[0]
-                            logger.debug(f"[MATERIAL_COLOR] {global_id}: Selected FIRST layer (POSITIVE sense)")
+                            logger.debug("[MATERIAL_COLOR] %s: Selected FIRST layer (POSITIVE sense)", global_id)
                         
                         # Extract color from the visible layer's material
                         if hasattr(visible_layer, 'Material') and visible_layer.Material:
@@ -418,7 +414,7 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
     
     try:
         associations_count = len(getattr(obj, 'HasAssociations', []) or [])
-        logger.debug(f"[MATERIAL_COLOR] {global_id}: HasAssociations count: {associations_count}")
+        logger.debug("[MATERIAL_COLOR] %s: HasAssociations count: %d", global_id, associations_count)
         
         for association in getattr(obj, 'HasAssociations', []) or []:
             try:
@@ -427,7 +423,7 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
             except Exception:
                 continue
         if not collected:
-            logger.debug(f"[MATERIAL_COLOR] {global_id}: No direct material, checking IsTypedBy...")
+            logger.debug("[MATERIAL_COLOR] %s: No direct material, checking IsTypedBy...", global_id)
             for type_rel in getattr(obj, 'IsTypedBy', []) or []:
                 rtype = getattr(type_rel, 'RelatingType', None)
                 if rtype:
@@ -440,11 +436,14 @@ def get_object_material_colors(obj: Any) -> List[Dict[str, Any]]:
     except Exception:
         pass
     
-    logger.debug(f"[MATERIAL_COLOR] {global_id}: Found {len(collected)} material colors")
+    logger.debug("[MATERIAL_COLOR] %s: Found %d material colors", global_id, len(collected))
     if collected:
-        for i, mc in enumerate(collected[:3]):  # Log first 3
+        for i, mc in enumerate(collected[:3]):
             col = mc.get('color', {})
-            logger.debug(f"[MATERIAL_COLOR] {global_id}: Color[{i}] = RGB({col.get('red')}, {col.get('green')}, {col.get('blue')}), mat={mc.get('material_name')}")
+            logger.debug(
+                "[MATERIAL_COLOR] %s: Color[%d] = RGB(%s, %s, %s), mat=%s",
+                global_id, i, col.get('red'), col.get('green'), col.get('blue'), mc.get('material_name'),
+            )
     
     return collected
 
@@ -481,7 +480,7 @@ def resolve_colors_for_groups(
     if not unresolved_groups:
         return
     
-    logger.debug(f"[COLOR_FIX_TRY] {global_id}: {len(unresolved_groups)}/{len(groups)} groups need color resolution")
+    logger.debug("[COLOR_FIX_TRY] %s: %d/%d groups need color resolution", global_id, len(unresolved_groups), len(groups))
     
     # STRATEGY 1: Match by styled color names
     styled_palette = collect_styled_colors_from_obj(obj, styled_by_item, indexed_colour_by_item)
@@ -496,10 +495,10 @@ def resolve_colors_for_groups(
                 grp['rgba'] = sc['rgba']
                 grp['transparency'] = sc['transparency']
                 matched += 1
-                logger.debug(f"[COLOR_FIX_TRY] {global_id}: Matched group[mid={grp['style_key']}, name='{mat_name}'] to styled color")
+                logger.debug("[COLOR_FIX_TRY] %s: Matched group[name='%s'] to styled color", global_id, mat_name)
         
         if matched > 0:
-            logger.debug(f"[COLOR_FIX_TRY] {global_id}: Matched {matched} groups by styled color name")
+            logger.debug("[COLOR_FIX_TRY] %s: Matched %d groups by styled color name", global_id, matched)
     
     # STRATEGY 2: Match by material association names  
     mat_colors = get_object_material_colors(obj)
@@ -520,10 +519,10 @@ def resolve_colors_for_groups(
                 grp['rgba'] = (r, g, b, a)
                 grp['transparency'] = t
                 matched += 1
-                logger.debug(f"[COLOR_FIX_TRY] {global_id}: Matched group[mid={grp['style_key']}, name='{mat_name}'] to material color")
+                logger.debug("[COLOR_FIX_TRY] %s: Matched group[name='%s'] to material color", global_id, mat_name)
         
         if matched > 0:
-            logger.info(f"[COLOR_FIX_TRY] {global_id}: Matched {matched} groups by material name")
+            logger.info("[COLOR_FIX_TRY] %s: Matched %d groups by material name", global_id, matched)
     
     # STRATEGY 3: Single-material fallback
     # If we have only one material group and exactly one IFC material, apply it
@@ -533,7 +532,7 @@ def resolve_colors_for_groups(
     ]
     
     if still_unresolved and len(groups) == 1 and mat_colors and len(mat_colors) == 1:
-        logger.debug(f"[COLOR_FIX_TRY] {global_id}: Single-material fallback - applying only available material")
+        logger.debug("[COLOR_FIX_TRY] %s: Single-material fallback - applying only available material", global_id)
         grp = groups[0]
         mc = mat_colors[0]
         col = mc.get('color', {})
@@ -545,7 +544,7 @@ def resolve_colors_for_groups(
         grp['rgba'] = (r, g, b, a)
         grp['transparency'] = t
         grp['material_name'] = mc.get('material_name', 'Material')
-        logger.debug(f"[COLOR_FIX_TRY] {global_id}: Applied single material: '{grp['material_name']}' RGB({r:.3f},{g:.3f},{b:.3f})")
+        logger.debug("[COLOR_FIX_TRY] %s: Applied single material: '%s' RGB(%.3f,%.3f,%.3f)", global_id, grp['material_name'], r, g, b)
         still_unresolved = []
     
     # Collect unresolved objects for batch logging
@@ -559,8 +558,8 @@ def log_unresolved_summary() -> None:
         count = len(_unresolved_objects)
         # Show first 20 GlobalIds for debugging
         id_list = ', '.join(_unresolved_objects[:20])
-        suffix = f' ... (showing 20/{count})' if count > 20 else ''
-        logger.warning(f"[COLOR_FIX_TRY] Total {count} objects without color, in default gray. GlobalIds: {id_list}{suffix}")
+        suffix = ' ... (showing 20/%d)' % count if count > 20 else ''
+        logger.warning("[COLOR_FIX_TRY] Total %d objects without color, in default gray. GlobalIds: %s%s", count, id_list, suffix)
     _unresolved_objects.clear()
 
 
