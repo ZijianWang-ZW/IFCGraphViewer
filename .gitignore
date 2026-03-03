@@ -4,5 +4,6 @@ __pycache__/
 .playwright-cli/
 .pytest_cache/
 .venv/
+example_str/viewer/
 docs/*report.json
 example_str/graph_import_report.json
