@@ -232,17 +232,26 @@ function appendInspectorSection(container, title, rows, options = {}) {
   heading.textContent = title;
   section.appendChild(heading);
 
-  const grid = document.createElement('div');
-  grid.className = 'inspectorGrid';
+  const list = document.createElement('div');
+  list.className = 'inspectorPropertyList';
   for (const row of rows) {
     if (!row || !row.label) continue;
-    const keyEl = document.createElement('div');
-    keyEl.className = 'inspectorKey';
-    keyEl.textContent = row.label;
-    grid.appendChild(keyEl);
-    grid.appendChild(makeInspectorValueElement(row.value, { mono: Boolean(row.mono) }));
+    const line = document.createElement('div');
+    line.className = 'inspectorPropertyRow';
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'inspectorPropertyKey';
+    keyEl.textContent = `${row.label}: `;
+    line.appendChild(keyEl);
+
+    const valueEl = document.createElement('span');
+    valueEl.className = `inspectorPropertyValue${row.mono ? ' mono' : ''}`;
+    valueEl.textContent = formatPropertyValueForDisplay(row.value);
+    line.appendChild(valueEl);
+
+    list.appendChild(line);
   }
-  section.appendChild(grid);
+  section.appendChild(list);
 
   if (options.note) {
     const note = document.createElement('div');

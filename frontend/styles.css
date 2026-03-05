@@ -193,7 +193,10 @@ body { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
 }
 
 .inspectorPropertyRow {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px;
   padding: 6px 8px;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -205,12 +208,17 @@ body { display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh; }
   font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
   font-weight: 700;
   color: #0f172a;
-  margin-right: 6px;
+  white-space: nowrap;
 }
 
 .inspectorPropertyValue {
   color: #1f2937;
   word-break: break-word;
+  min-width: 0;
+}
+
+.inspectorPropertyValue.mono {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
 }
 
 .status {
