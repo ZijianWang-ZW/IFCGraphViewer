@@ -23,6 +23,12 @@ const TOPOLOGY_RELATIONSHIP_TYPES = new Set([
   'IfcRelAggregates',
   'IfcRelContainedInSpatialStructure',
 ]);
+const FULL_GRAPH_MAX_LIMIT = 5000;
+const DEFAULT_FULL_GRAPH_LIMIT = 1000;
+const SELECTION_ACCENT_HEX = '#0b5ed7';
+const SELECTION_ACCENT_RGB = 0x0b5ed7;
+const VIEWER_HIGHLIGHT_INTENSITY = 0.72;
+const INSPECTOR_COLLAPSE_ROW_THRESHOLD = 10;
 
 const state = {
   viewerModelUrl: '/viewer-files/model.glb',
@@ -33,7 +39,7 @@ const state = {
   objectDetailCache: new Map(),
   geometryDetailCache: new Map(),
   neighborhoodCache: new Map(),
-  fullGraphCache: null,
+  fullGraphCache: new Map(),
   graphMode: 'none',
   currentCenterGlobalId: null,
   currentHops: 1,
@@ -60,7 +66,7 @@ const state = {
   mouse: null,
   loadedRoot: null,
   objectMap: new Map(),
-  selectedMesh: null,
+  viewerHighlightedObjectIds: new Set(),
 };
 
 function setStatus(id, text, error = false) {
@@ -167,11 +173,208 @@ function stringifyForInspector(value) {
   );
 }
 
+function isEmptyInspectorValue(value) {
+  if (value === null || value === undefined) return true;
+  if (typeof value !== 'string') return false;
+  const text = value.trim().toLowerCase();
+  return text === '' || text === 'null' || text === 'none' || text === 'nan';
+}
+
+function parseJsonLikeString(value) {
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  if (!text) return null;
+  if (!(text.startsWith('{') || text.startsWith('['))) return null;
+  try {
+    return JSON.parse(text);
+  } catch (_err) {
+    return null;
+  }
+}
+
+function toInspectorText(value) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : '—';
+  if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
+  if (typeof value === 'object') return stringifyForInspector(value);
+  return String(value);
+}
+
+function makeInspectorValueElement(value, { mono = false } = {}) {
+  const valueEl = document.createElement('div');
+  valueEl.className = `inspectorValue${mono ? ' mono' : ''}`;
+
+  const parsedJson = typeof value === 'string' ? parseJsonLikeString(value) : null;
+  const text = parsedJson !== null
+    ? JSON.stringify(parsedJson, null, 2)
+    : toInspectorText(value);
+  const normalized = typeof text === 'string' ? text : String(text);
+  const isMultiLine = normalized.includes('\n') || normalized.length > 160;
+
+  if (isMultiLine) {
+    const pre = document.createElement('pre');
+    pre.className = `inspectorJson${mono ? ' mono' : ''}`;
+    pre.textContent = normalized;
+    valueEl.appendChild(pre);
+  } else {
+    valueEl.textContent = normalized;
+  }
+  return valueEl;
+}
+
+function appendInspectorSection(container, title, rows, options = {}) {
+  const section = document.createElement('section');
+  section.className = 'inspectorSection';
+
+  const heading = document.createElement('h4');
+  heading.className = 'inspectorSectionTitle';
+  heading.textContent = title;
+  section.appendChild(heading);
+
+  const grid = document.createElement('div');
+  grid.className = 'inspectorGrid';
+  for (const row of rows) {
+    if (!row || !row.label) continue;
+    const keyEl = document.createElement('div');
+    keyEl.className = 'inspectorKey';
+    keyEl.textContent = row.label;
+    grid.appendChild(keyEl);
+    grid.appendChild(makeInspectorValueElement(row.value, { mono: Boolean(row.mono) }));
+  }
+  section.appendChild(grid);
+
+  if (options.note) {
+    const note = document.createElement('div');
+    note.className = 'inspectorNote';
+    note.textContent = String(options.note);
+    section.appendChild(note);
+  }
+
+  container.appendChild(section);
+}
+
+function formatPropertyValueForDisplay(value) {
+  const parsed = typeof value === 'string' ? parseJsonLikeString(value) : null;
+  const raw = parsed !== null ? parsed : value;
+
+  if (raw === null || raw === undefined || raw === '') return '—';
+  if (typeof raw === 'boolean') return raw ? 'true' : 'false';
+  if (typeof raw === 'number') return Number.isFinite(raw) ? String(raw) : '—';
+  if (typeof raw === 'string') return raw;
+
+  if (Array.isArray(raw)) {
+    if (!raw.length) return '[]';
+    const parts = raw.map((item) => formatPropertyValueForDisplay(item));
+    return `[${parts.join(', ')}]`;
+  }
+
+  if (typeof raw === 'object') {
+    const entries = Object.entries(raw).filter(([, v]) => !isEmptyInspectorValue(v));
+    if (!entries.length) return '{}';
+    return entries
+      .map(([k, v]) => `${k}: ${formatPropertyValueForDisplay(v)}`)
+      .join(' | ');
+  }
+
+  return String(raw);
+}
+
+function appendInspectorProperties(container, attributes) {
+  const entries = Object.entries(attributes || {});
+  const nonEmpty = entries.filter(([, value]) => !isEmptyInspectorValue(value));
+  const hiddenCount = entries.length - nonEmpty.length;
+
+  const wrapper = document.createElement('section');
+  wrapper.className = 'inspectorSection';
+
+  const details = document.createElement('details');
+  details.className = 'inspectorDetails';
+  details.open = nonEmpty.length <= INSPECTOR_COLLAPSE_ROW_THRESHOLD;
+
+  const summary = document.createElement('summary');
+  summary.textContent = `Properties (${nonEmpty.length})`;
+  details.appendChild(summary);
+
+  const list = document.createElement('div');
+  list.className = 'inspectorPropertyList';
+  for (const [key, value] of nonEmpty.sort((a, b) => a[0].localeCompare(b[0]))) {
+    const row = document.createElement('div');
+    row.className = 'inspectorPropertyRow';
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'inspectorPropertyKey';
+    keyEl.textContent = `${key}: `;
+    row.appendChild(keyEl);
+
+    const valueEl = document.createElement('span');
+    valueEl.className = 'inspectorPropertyValue';
+    const formatted = formatPropertyValueForDisplay(value);
+    valueEl.textContent = formatted;
+    row.appendChild(valueEl);
+
+    list.appendChild(row);
+  }
+  details.appendChild(list);
+  wrapper.appendChild(details);
+
+  if (hiddenCount > 0) {
+    const note = document.createElement('div');
+    note.className = 'inspectorNote';
+    note.textContent = `${hiddenCount} empty properties are hidden to keep this view readable.`;
+    wrapper.appendChild(note);
+  }
+
+  container.appendChild(wrapper);
+}
+
+function appendInspectorJsonDetails(container, title, value, summaryLabel = 'Show JSON') {
+  if (value === null || value === undefined || value === '') return;
+  const section = document.createElement('section');
+  section.className = 'inspectorSection';
+
+  const heading = document.createElement('h4');
+  heading.className = 'inspectorSectionTitle';
+  heading.textContent = title;
+  section.appendChild(heading);
+
+  const details = document.createElement('details');
+  details.className = 'inspectorDetails';
+  const summary = document.createElement('summary');
+  summary.textContent = summaryLabel;
+  details.appendChild(summary);
+  details.appendChild(makeInspectorValueElement(value, { mono: true }));
+  section.appendChild(details);
+  container.appendChild(section);
+}
+
 function setInspector(title, payload) {
   const el = document.getElementById('detailContent');
   if (!el) return;
-  const body = typeof payload === 'string' ? payload : stringifyForInspector(payload);
-  el.textContent = `${title}\n${body}`;
+  el.replaceChildren();
+
+  if (typeof payload === 'string') {
+    const section = document.createElement('section');
+    section.className = 'inspectorSection';
+    const heading = document.createElement('h4');
+    heading.className = 'inspectorSectionTitle';
+    heading.textContent = title;
+    section.appendChild(heading);
+    section.appendChild(makeInspectorValueElement(payload));
+    el.appendChild(section);
+    return;
+  }
+
+  if (payload && typeof payload === 'object') {
+    appendInspectorSection(
+      el,
+      title,
+      Object.entries(payload).map(([label, value]) => ({ label, value })),
+    );
+    return;
+  }
+
+  appendInspectorSection(el, title, [{ label: 'Value', value: payload }]);
 }
 
 async function fetchJson(url) {
@@ -299,45 +502,81 @@ function focusCameraToObject(obj) {
   moveCameraToBox(box, 'iso');
 }
 
-function setViewerSelection(globalId) {
-  if (state.selectedMesh && state.selectedMesh.userData.__originalMaterial) {
-    state.selectedMesh.material = state.selectedMesh.userData.__originalMaterial;
-  }
-  state.selectedMesh = null;
-
-  if (!globalId) return;
-  const rootObj = state.objectMap.get(globalId);
+function restoreViewerObjectMaterial(rootObj) {
   if (!rootObj) return;
+  rootObj.traverse((child) => {
+    if (!child.isMesh) return;
+    const original = child.userData.__originalMaterial;
+    if (original !== undefined) {
+      child.material = original;
+      delete child.userData.__originalMaterial;
+    }
+  });
+}
 
-  let mesh = rootObj;
-  if (!mesh.isMesh) {
-    let firstMesh = null;
-    rootObj.traverse((child) => {
-      if (!firstMesh && child.isMesh) firstMesh = child;
-    });
-    if (!firstMesh) return;
-    mesh = firstMesh;
+function clearViewerHighlights() {
+  for (const gid of state.viewerHighlightedObjectIds) {
+    const rootObj = state.objectMap.get(gid);
+    restoreViewerObjectMaterial(rootObj);
+  }
+  state.viewerHighlightedObjectIds.clear();
+}
+
+function highlightViewerObject(globalId) {
+  const rootObj = state.objectMap.get(globalId);
+  if (!rootObj) return false;
+
+  const accent = new THREE.Color(SELECTION_ACCENT_RGB);
+  let hasMesh = false;
+  rootObj.traverse((child) => {
+    if (!child.isMesh) return;
+    hasMesh = true;
+
+    if (child.userData.__originalMaterial === undefined) {
+      child.userData.__originalMaterial = child.material;
+    }
+
+    const cloned = Array.isArray(child.material)
+      ? child.material.map((mat) => mat.clone())
+      : child.material.clone();
+
+    const paint = (mat) => {
+      if (!mat) return;
+      if ('emissive' in mat && mat.emissive) {
+        mat.emissive.copy(accent);
+      } else if ('color' in mat && mat.color) {
+        mat.color.lerp(accent, 0.33);
+      }
+      if ('emissiveIntensity' in mat) {
+        mat.emissiveIntensity = VIEWER_HIGHLIGHT_INTENSITY;
+      }
+    };
+
+    if (Array.isArray(cloned)) cloned.forEach(paint);
+    else paint(cloned);
+
+    child.material = cloned;
+  });
+
+  if (!hasMesh) return false;
+  state.viewerHighlightedObjectIds.add(globalId);
+  return true;
+}
+
+function setViewerHighlights(globalIds, { focusGlobalId = null } = {}) {
+  clearViewerHighlights();
+  const uniqueIds = [...new Set((globalIds || []).filter(Boolean))];
+  for (const gid of uniqueIds) {
+    highlightViewerObject(gid);
   }
 
-  if (!mesh.userData.__originalMaterial) {
-    mesh.userData.__originalMaterial = mesh.material;
+  const focusId = focusGlobalId && uniqueIds.includes(focusGlobalId)
+    ? focusGlobalId
+    : uniqueIds[0];
+  if (focusId) {
+    const rootObj = state.objectMap.get(focusId);
+    if (rootObj) focusCameraToObject(rootObj);
   }
-
-  const mat = Array.isArray(mesh.material)
-    ? mesh.material.map((m) => m.clone())
-    : mesh.material.clone();
-
-  const applyHighlight = (m) => {
-    if ('emissive' in m) m.emissive.set(0x0066ff);
-    if ('emissiveIntensity' in m) m.emissiveIntensity = 0.7;
-  };
-
-  if (Array.isArray(mat)) mat.forEach(applyHighlight);
-  else applyHighlight(mat);
-
-  mesh.material = mat;
-  state.selectedMesh = mesh;
-  focusCameraToObject(rootObj);
 }
 
 function findGlobalIdFromIntersection(object) {
@@ -436,9 +675,9 @@ function initGraph() {
       {
         selector: 'node[type = "building"][isTopologyNode = 1]',
         style: {
-          'background-color': '#2563eb',
+          'background-color': '#374151',
           'border-width': 2,
-          'border-color': '#1e40af',
+          'border-color': '#111827',
           width: 30,
           height: 30,
         },
@@ -481,10 +720,13 @@ function initGraph() {
         },
       },
       {
-        selector: 'node.selected',
+        selector: 'node.selected, node.linked-selected',
         style: {
-          'border-width': 3,
-          'border-color': '#0b5ed7',
+          'border-width': 4,
+          'border-color': SELECTION_ACCENT_HEX,
+          'border-opacity': 1,
+          'background-color': '#2563eb',
+          'z-index': 9999,
         },
       },
       {
@@ -528,8 +770,8 @@ function initGraph() {
         selector: 'edge.selected-edge',
         style: {
           width: 3,
-          'line-color': '#2563eb',
-          'target-arrow-color': '#2563eb',
+          'line-color': SELECTION_ACCENT_HEX,
+          'target-arrow-color': SELECTION_ACCENT_HEX,
           label: 'data(relationshipType)',
           'font-size': 9,
           color: '#1e293b',
@@ -576,7 +818,11 @@ function initGraph() {
 
       if (type === 'geometry') {
         const defId = Number(node.data('definitionId'));
-        highlightGeometryInstances(defId);
+        const linkedObjectIds = highlightGeometryInstances(defId);
+        setViewerHighlights(linkedObjectIds, { focusGlobalId: linkedObjectIds[0] || null });
+        state.selectedGlobalId = linkedObjectIds.length === 1 ? linkedObjectIds[0] : null;
+        setText('selectedId', `Geometry#${defId}`);
+        setText('selectedType', `GeometryDefinition (${linkedObjectIds.length} objects)`);
         await showGeometryDetails(defId);
       }
     });
@@ -609,8 +855,13 @@ function initGraph() {
   state.cy.on('tap', (evt) => {
     if (evt.target === state.cy) {
       clearEdgeSelection();
+      applyGraphNodeSelection({ primaryNodeId: null, linkedGlobalIds: [] });
       state.graphContextNodeId = null;
       state.graphPreviewNodeId = null;
+      state.selectedGlobalId = null;
+      clearViewerHighlights();
+      setText('selectedId', 'None');
+      setText('selectedType', '-');
       hideGraphTooltip();
       applyGraphContext();
     }
@@ -658,10 +909,19 @@ function updateTopologyButton() {
 
 function graphElementsFromData(payload, { resetMaps = true } = {}) {
   const elements = [];
+  const seenIds = new Set();
   const buildingNodes = payload.nodes?.buildingObjects || [];
   const geometryNodes = payload.nodes?.geometryDefinitions || [];
   const relates = payload.edges?.relatesTo || [];
   const uses = payload.edges?.usesGeometry || [];
+
+  const addElement = (element) => {
+    const id = element?.data?.id;
+    if (!id || seenIds.has(id)) return false;
+    seenIds.add(id);
+    elements.push(element);
+    return true;
+  };
 
   if (resetMaps) {
     state.objectTypeMap = {};
@@ -669,16 +929,18 @@ function graphElementsFromData(payload, { resetMaps = true } = {}) {
   }
 
   for (const o of buildingNodes) {
+    const globalId = normalizeName(o?.GlobalId);
+    if (!globalId) continue;
     const ifcType = o.ifcType || 'Unknown';
-    state.objectTypeMap[o.GlobalId] = ifcType;
+    state.objectTypeMap[globalId] = ifcType;
     const isTopologyNode = isTopologyIfcType(ifcType) ? 1 : 0;
-    const label = buildBuildingNodeLabel(o);
-    elements.push({
+    const label = buildBuildingNodeLabel({ ...o, GlobalId: globalId });
+    addElement({
       data: {
-        id: `obj:${o.GlobalId}`,
+        id: `obj:${globalId}`,
         type: 'building',
         label,
-        globalId: o.GlobalId,
+        globalId,
         ifcType,
         name: normalizeName(o.name),
         isTopologyNode,
@@ -687,9 +949,10 @@ function graphElementsFromData(payload, { resetMaps = true } = {}) {
   }
 
   for (const g of geometryNodes) {
-    const definitionId = Number(g.definitionId);
+    const definitionId = Number(g?.definitionId);
+    if (!Number.isFinite(definitionId)) continue;
     state.geometryNodeMap.set(definitionId, g);
-    elements.push({
+    addElement({
       data: {
         id: `geo:${definitionId}`,
         type: 'geometry',
@@ -700,13 +963,16 @@ function graphElementsFromData(payload, { resetMaps = true } = {}) {
   }
 
   for (const e of relates) {
+    const src = normalizeName(e?.src);
+    const dst = normalizeName(e?.dst);
+    if (!src || !dst) continue;
     const relationshipType = e.relationshipType || 'RELATES_TO';
     const isTopologyEdge = isTopologyRelationship(relationshipType) ? 1 : 0;
-    elements.push({
+    addElement({
       data: {
-        id: `rel:${e.src}:${e.dst}:${e.relationshipType}`,
-        source: `obj:${e.src}`,
-        target: `obj:${e.dst}`,
+        id: `rel:${src}:${dst}:${relationshipType}`,
+        source: `obj:${src}`,
+        target: `obj:${dst}`,
         type: 'relates',
         relationshipType,
         isTopologyEdge,
@@ -715,11 +981,14 @@ function graphElementsFromData(payload, { resetMaps = true } = {}) {
   }
 
   for (const e of uses) {
-    elements.push({
+    const src = normalizeName(e?.src);
+    const definitionId = Number(e?.definitionId);
+    if (!src || !Number.isFinite(definitionId)) continue;
+    addElement({
       data: {
-        id: `use:${e.src}:${e.definitionId}`,
-        source: `obj:${e.src}`,
-        target: `geo:${e.definitionId}`,
+        id: `use:${src}:${definitionId}`,
+        source: `obj:${src}`,
+        target: `geo:${definitionId}`,
         type: 'uses',
         relationshipType: 'USES_GEOMETRY',
       },
@@ -742,11 +1011,14 @@ async function getNeighborhoodPayload(globalId, hops, limit = 500) {
 }
 
 async function getFullGraphPayload(limit = 1000) {
-  if (state.fullGraphCache && state.fullGraphCache.limit === limit) {
-    return state.fullGraphCache;
-  }
-  const payload = await fetchJson(`/api/graph/full?limit=${limit}`);
-  state.fullGraphCache = payload;
+  const normalizedLimit = Math.max(
+    1,
+    Math.min(FULL_GRAPH_MAX_LIMIT, Number(limit) || DEFAULT_FULL_GRAPH_LIMIT)
+  );
+  const cacheKey = String(normalizedLimit);
+  if (state.fullGraphCache.has(cacheKey)) return state.fullGraphCache.get(cacheKey);
+  const payload = await fetchJson(`/api/graph/full?limit=${normalizedLimit}`);
+  state.fullGraphCache.set(cacheKey, payload);
   return payload;
 }
 
@@ -1028,14 +1300,29 @@ async function showBigPicture() {
         hops: state.currentHops,
       };
     }
-    const payload = await getFullGraphPayload(1000);
+    const overview = await fetchJson('/api/graph/overview');
+    const totalObjects = Math.max(0, Number(overview?.building_objects) || 0);
+    const limit = totalObjects > 0
+      ? Math.min(FULL_GRAPH_MAX_LIMIT, totalObjects)
+      : DEFAULT_FULL_GRAPH_LIMIT;
+    const payload = await getFullGraphPayload(limit);
     const elements = graphElementsFromData(payload, { resetMaps: true });
     replaceGraph(elements, 'big');
     state.graphMode = 'big';
     state.currentCenterGlobalId = null;
     updateBackButtonState();
     const topologyCount = countTopologyNodes(payload.nodes.buildingObjects);
-    setStatus('graphStatus', `Graph(big): ${payload.nodes.buildingObjects.length} objects, ${payload.edges.relatesTo.length} relations, topology nodes=${topologyCount}`);
+    const loadedObjects = payload.nodes.buildingObjects.length;
+    const relationCount = payload.edges.relatesTo.length;
+    const isTruncated = totalObjects > limit;
+    const objectPart = totalObjects > 0
+      ? `${loadedObjects}/${totalObjects}`
+      : `${loadedObjects}`;
+    const suffix = isTruncated ? `, truncated at limit=${limit}` : '';
+    setStatus(
+      'graphStatus',
+      `Graph(big): ${objectPart} objects, ${relationCount} relations, topology nodes=${topologyCount}${suffix}`
+    );
   });
 }
 
@@ -1049,14 +1336,11 @@ async function backToFocusView() {
 
 function markGraphSelection(globalId) {
   if (!state.cy) return;
-  state.cy.nodes().removeClass('selected');
-  if (!globalId) return;
-  const node = state.cy.getElementById(`obj:${globalId}`);
-  if (node && node.length) {
-    node.addClass('selected');
-    setPersistentGraphContext(node.id());
-    state.cy.center(node);
-  }
+  applyGraphNodeSelection({
+    primaryNodeId: globalId ? `obj:${globalId}` : null,
+    linkedGlobalIds: globalId ? [globalId] : [],
+    centerOnPrimary: true,
+  });
 }
 
 function clearEdgeSelection() {
@@ -1071,14 +1355,47 @@ function markEdgeSelection(edgeId) {
   if (edge && edge.length) edge.addClass('selected-edge');
 }
 
+function applyGraphNodeSelection({
+  primaryNodeId = null,
+  linkedGlobalIds = [],
+  centerOnPrimary = false,
+} = {}) {
+  if (!state.cy) return;
+  state.cy.nodes().removeClass('selected linked-selected');
+
+  const linkedIds = [...new Set((linkedGlobalIds || []).filter(Boolean))];
+  for (const gid of linkedIds) {
+    const node = state.cy.getElementById(`obj:${gid}`);
+    if (node && node.length) node.addClass('linked-selected');
+  }
+
+  if (!primaryNodeId) return;
+  const primaryNode = state.cy.getElementById(primaryNodeId);
+  if (primaryNode && primaryNode.length) {
+    primaryNode.removeClass('linked-selected');
+    primaryNode.addClass('selected');
+    setPersistentGraphContext(primaryNode.id());
+    if (centerOnPrimary) state.cy.center(primaryNode);
+  }
+}
+
 function highlightGeometryInstances(definitionId) {
-  if (!definitionId || !state.cy) return;
+  if (!definitionId || !state.cy) return [];
   clearEdgeSelection();
   const edges = state.cy
     .edges()
     .filter((edge) => edge.data('type') === 'uses' && Number(edge.target().data('definitionId')) === Number(definitionId));
-  state.cy.nodes().removeClass('selected');
-  edges.forEach((edge) => edge.source().addClass('selected'));
+  const objectIds = [];
+  edges.forEach((edge) => {
+    edge.addClass('selected-edge');
+    const gid = edge.source().data('globalId');
+    if (gid) objectIds.push(gid);
+  });
+  applyGraphNodeSelection({
+    primaryNodeId: `geo:${Number(definitionId)}`,
+    linkedGlobalIds: objectIds,
+  });
+  return [...new Set(objectIds)];
 }
 
 function parseAttributes(rawObject) {
@@ -1120,19 +1437,47 @@ function renderBuildingDetails(globalId, detail) {
     definitionId: edge.definitionId,
     instanceParamsJson: edge.instanceParamsJson || null,
   }));
+  const definitionIds = [...new Set(usesGeometry.map((edge) => edge.definitionId).filter((id) => id !== null && id !== undefined))];
+  const inspector = document.getElementById('detailContent');
+  if (!inspector) return;
+  inspector.replaceChildren();
 
-  setInspector('Building Node Attributes', {
-    nodeType: 'building',
-    GlobalId: object.GlobalId || globalId,
-    ifcType: object.ifcType || null,
-    name: object.name || null,
-    hasGeometry: object.hasGeometry,
-    geometryMethod: object.geometryMethod || null,
-    hasGeometryFilePath: object.hasGeometryFilePath || null,
-    viewer: detail.viewer || null,
-    usesGeometry,
-    attributes,
-  });
+  appendInspectorSection(inspector, 'Node', [
+    { label: 'GlobalId', value: object.GlobalId || globalId, mono: true },
+    { label: 'IFC Type', value: object.ifcType || 'Unknown' },
+    { label: 'Name', value: object.name || '—' },
+  ]);
+
+  appendInspectorSection(inspector, 'Geometry', [
+    { label: 'Has Geometry', value: object.hasGeometry },
+    { label: 'Geometry Method', value: object.geometryMethod || '—' },
+    { label: 'Geometry Definition IDs', value: definitionIds.length ? definitionIds.join(', ') : '—', mono: true },
+    { label: 'Uses Geometry Edges', value: usesGeometry.length },
+    { label: 'OBJ File Path', value: object.hasGeometryFilePath || '—', mono: true },
+    {
+      label: 'Viewer Mapping',
+      value: detail.viewer
+        ? `node=${detail.viewer.node_index ?? '-'}, mesh=${detail.viewer.mesh_index ?? '-'}`
+        : 'Not mapped in viewer index',
+      mono: true,
+    },
+  ]);
+
+  if (usesGeometry.length) {
+    const previewRows = usesGeometry.slice(0, 6).map((edge, idx) => ({
+      label: `Edge #${idx + 1}`,
+      value: `definitionId=${edge.definitionId}${edge.instanceParamsJson ? ', has instance params' : ''}`,
+      mono: true,
+    }));
+    appendInspectorSection(
+      inspector,
+      'Uses Geometry Preview',
+      previewRows,
+      usesGeometry.length > 6 ? { note: `${usesGeometry.length - 6} additional USES_GEOMETRY edges are hidden.` } : {},
+    );
+  }
+
+  appendInspectorProperties(inspector, attributes);
 }
 
 async function showGeometryDetails(definitionId) {
@@ -1148,14 +1493,45 @@ async function showGeometryDetails(definitionId) {
       .edges()
       .filter((edge) => edge.data('type') === 'uses' && Number(edge.target().data('definitionId')) === Number(definitionId))
       .map((edge) => edge.source().data('globalId'));
+    const uniqueConnected = [...new Set(connectedObjects.filter(Boolean))];
+    const geometry = detail.geometry || {};
+    const inspector = document.getElementById('detailContent');
+    if (!inspector) return;
+    inspector.replaceChildren();
 
-    setInspector('Geometry Node Attributes', {
-      nodeType: 'geometry',
-      definitionId: Number(definitionId),
-      summary,
-      connectedObjectIds: connectedObjects,
-      geometry: detail.geometry || {},
-    });
+    appendInspectorSection(inspector, 'Geometry Node', [
+      { label: 'Definition ID', value: Number(definitionId), mono: true },
+      { label: 'Method', value: geometry.method || summary.method || '—' },
+      { label: 'Representation Type', value: geometry.representationType || summary.representationType || '—' },
+    ]);
+
+    appendInspectorSection(inspector, 'Geometry Properties', [
+      { label: 'Has Geometry Tree', value: Boolean(geometry.geometryTreeJson) },
+      {
+        label: 'Geometry Tree Length',
+        value: typeof geometry.geometryTreeJson === 'string' ? geometry.geometryTreeJson.length : 0,
+      },
+      { label: 'Instance Count', value: summary.instanceCount ?? geometry.instanceCount ?? '—' },
+      { label: 'Connected Building Objects', value: uniqueConnected.length },
+    ]);
+
+    if (uniqueConnected.length) {
+      const rows = uniqueConnected.slice(0, 12).map((gid, idx) => ({
+        label: `Object #${idx + 1}`,
+        value: gid,
+        mono: true,
+      }));
+      appendInspectorSection(
+        inspector,
+        'Connected Objects',
+        rows,
+        uniqueConnected.length > 12
+          ? { note: `${uniqueConnected.length - 12} additional connected objects are hidden.` }
+          : {},
+      );
+    }
+
+    appendInspectorJsonDetails(inspector, 'Geometry Tree', geometry.geometryTreeJson, 'Show geometry tree JSON');
   } catch (err) {
     setInspector('Geometry Node Attributes', `Failed to load geometry detail: ${err.message || err}`);
   }
@@ -1163,13 +1539,22 @@ async function showGeometryDetails(definitionId) {
 
 function showEdgeDetails(edgeData) {
   const name = edgeData.relationshipType || edgeData.type || 'edge';
-  setInspector('Edge Attributes', {
-    edgeType: edgeData.type || null,
-    edgeName: name,
-    source: edgeData.source || null,
-    target: edgeData.target || null,
-    relationshipType: edgeData.relationshipType || null,
-  });
+  const normalizeEndpoint = (value) => {
+    const text = String(value || '');
+    if (text.startsWith('obj:')) return text.slice(4);
+    if (text.startsWith('geo:')) return `Geometry#${text.slice(4)}`;
+    return text || '—';
+  };
+  const inspector = document.getElementById('detailContent');
+  if (!inspector) return;
+  inspector.replaceChildren();
+  appendInspectorSection(inspector, 'Edge', [
+    { label: 'Type', value: edgeData.type || '—' },
+    { label: 'Name', value: name },
+    { label: 'Relationship Type', value: edgeData.relationshipType || '—' },
+    { label: 'Source', value: normalizeEndpoint(edgeData.source), mono: true },
+    { label: 'Target', value: normalizeEndpoint(edgeData.target), mono: true },
+  ]);
 }
 
 async function selectObject(globalId, source = 'api') {
@@ -1189,7 +1574,7 @@ async function selectObject(globalId, source = 'api') {
     state.selectedGlobalId = globalId;
     setText('selectedId', globalId);
 
-    setViewerSelection(globalId);
+    setViewerHighlights([globalId], { focusGlobalId: globalId });
     markGraphSelection(globalId);
     clearEdgeSelection();
 

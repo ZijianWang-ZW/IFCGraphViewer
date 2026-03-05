@@ -1,0 +1,46 @@
+Relating_Object_Type,Relating_Object_GUID,Related_Object_Type,Related_Object_GUID,Relationship_Type
+IfcProject,1RJW9X$0v41w0khmPgA1_c,IfcSite,1RJW9X$0v41w0khmPgA1_a,IfcRelAggregates
+IfcSite,1RJW9X$0v41w0khmPgA1_a,IfcBuilding,1RJW9X$0v41w0khmPgA1_d,IfcRelAggregates
+IfcBuilding,1RJW9X$0v41w0khmPgA1_d,IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcRelAggregates
+IfcBuilding,1RJW9X$0v41w0khmPgA1_d,IfcBuildingStorey,1ZGO8hrFCHqw0v0026FpFv,IfcRelAggregates
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcWall,0N306lLjTEow86rs_mTer6,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcWall,0N306lLjTEow86rs_mTeqH,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcWall,0N306lLjTEow86rs_mTfBC,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcWall,0N306lLjTEow86rs_mTfAZ,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcDoor,0N306lLjTEow86rs_mTfAt,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcWindow,0N306lLjTEow86rs_mTf9S,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9V,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9G,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9H,IfcRelContainedInSpatialStructure
+IfcBuildingStorey,2JF4e6axWHqu3u0C1FZlmi,IfcSlab,0N306lLjTEow86rs_mTfEb,IfcRelContainedInSpatialStructure
+IfcWall,0N306lLjTEow86rs_mTer6,IfcOpeningElement,0sjD$MI0R3RskosXD8RoJK,IfcRelVoidsElement
+IfcWall,0N306lLjTEow86rs_mTeqH,IfcOpeningElement,1pA8QT2Zra$RmsJqunAOTm,IfcRelVoidsElement
+IfcOpeningElement,0sjD$MI0R3RskosXD8RoJK,IfcDoor,0N306lLjTEow86rs_mTfAt,IfcRelFillsElement
+IfcOpeningElement,1pA8QT2Zra$RmsJqunAOTm,IfcWindow,0N306lLjTEow86rs_mTf9S,IfcRelFillsElement
+IfcWall,0N306lLjTEow86rs_mTer6,IfcWall,0N306lLjTEow86rs_mTfAZ,IfcRelConnectsPathElements
+IfcWall,0N306lLjTEow86rs_mTer6,IfcWall,0N306lLjTEow86rs_mTeqH,IfcRelConnectsPathElements
+IfcWall,0N306lLjTEow86rs_mTeqH,IfcWall,0N306lLjTEow86rs_mTfBC,IfcRelConnectsPathElements
+IfcWall,0N306lLjTEow86rs_mTfBC,IfcWall,0N306lLjTEow86rs_mTfAZ,IfcRelConnectsPathElements
+IfcMaterialLayerSetUsage,"<bound method entity_instance.id of #8645=IfcMaterialLayerSetUsage(#8644,.AXIS3.,.POSITIVE.,0.,$)>",IfcSlab,0N306lLjTEow86rs_mTfEb,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8142=IfcMaterialConstituentSet($,$,(#8127,#8130,#8133,#8136,#8139))>",IfcDoorType,2rxvlApled8wVjtAOsqw3P,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8155=IfcMaterialConstituentSet($,$,(#8151,#8152,#8153,#8154))>",IfcDoor,0N306lLjTEow86rs_mTfAt,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8438=IfcMaterialConstituentSet($,$,(#8432,#8435))>",IfcWindowType,2TdRPyKr$RfySHBORu9SrO,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8448=IfcMaterialConstituentSet($,$,(#8446,#8447))>",IfcWindow,0N306lLjTEow86rs_mTf9S,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8522=IfcMaterialConstituentSet($,$,(#8516,#8519))>",IfcBuildingElementProxyType,0N306lLjTEow86rs_mTf8Q,IfcRelAssociatesMaterial
+IfcMaterialConstituentSet,"<bound method entity_instance.id of #8532=IfcMaterialConstituentSet($,$,(#8530,#8531))>",IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9V,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #73=IfcMaterialLayerSet((#72),'Basic Wall:Generic - 200mm',$)>",IfcWall,0N306lLjTEow86rs_mTer6,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #73=IfcMaterialLayerSet((#72),'Basic Wall:Generic - 200mm',$)>",IfcWallType,1xZrMVYp52mhf4uMzw11Hk,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #73=IfcMaterialLayerSet((#72),'Basic Wall:Generic - 200mm',$)>",IfcWall,0N306lLjTEow86rs_mTeqH,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #73=IfcMaterialLayerSet((#72),'Basic Wall:Generic - 200mm',$)>",IfcWall,0N306lLjTEow86rs_mTfBC,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #73=IfcMaterialLayerSet((#72),'Basic Wall:Generic - 200mm',$)>",IfcWall,0N306lLjTEow86rs_mTfAZ,IfcRelAssociatesMaterial
+IfcMaterial,Wood - Stained,IfcBuildingElementProxyType,0N306lLjTEow86rs_mTf8S,IfcRelAssociatesMaterial
+IfcMaterial,Wood - Stained,IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9H,IfcRelAssociatesMaterial
+IfcMaterial,Clad - White,IfcBuildingElementProxyType,0N306lLjTEow86rs_mTf8R,IfcRelAssociatesMaterial
+IfcMaterial,Clad - White,IfcBuildingElementProxy,0N306lLjTEow86rs_mTf9G,IfcRelAssociatesMaterial
+IfcMaterialLayerSet,"<bound method entity_instance.id of #8644=IfcMaterialLayerSet((#8643),'Floor:Generic 300mm',$)>",IfcSlabType,2G9mo_Rg17ee$DE9j_ga52,IfcRelAssociatesMaterial
+IfcClassificationReference,Exterior Walls,IfcWall,0N306lLjTEow86rs_mTer6,IfcRelAssociatesClassification
+IfcClassificationReference,Exterior Walls,IfcWall,0N306lLjTEow86rs_mTeqH,IfcRelAssociatesClassification
+IfcClassificationReference,Exterior Walls,IfcWall,0N306lLjTEow86rs_mTfBC,IfcRelAssociatesClassification
+IfcClassificationReference,Exterior Walls,IfcWall,0N306lLjTEow86rs_mTfAZ,IfcRelAssociatesClassification
+IfcClassificationReference,Glazed Doors & Entrances,IfcDoor,0N306lLjTEow86rs_mTfAt,IfcRelAssociatesClassification
+IfcClassificationReference,Windows,IfcWindow,0N306lLjTEow86rs_mTf9S,IfcRelAssociatesClassification

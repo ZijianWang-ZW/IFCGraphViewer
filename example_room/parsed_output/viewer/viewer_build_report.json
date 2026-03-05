@@ -1,0 +1,21 @@
+{
+  "ifc_file": "/Users/zijian/Desktop/IFCGraphViewer/example_room/simple-room.ifc",
+  "output_dir": "/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output",
+  "viewer_dir": "/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output/viewer",
+  "model_glb": "/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output/viewer/model.glb",
+  "object_index_json": "/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output/viewer/object_index.json",
+  "elements_total": 14,
+  "elements_total_raw": 16,
+  "elements_excluded": 2,
+  "excluded_ifc_types": [
+    "IfcOpeningElement"
+  ],
+  "geometry_stats": {
+    "processed": 10,
+    "with_geometry": 10,
+    "without_geometry": 0,
+    "errors": 0
+  },
+  "object_index_count": 10,
+  "time_seconds": 0.182
+}

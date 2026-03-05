@@ -29,6 +29,46 @@ cd /Users/zijian/Desktop/IFCGraphViewer
 pip install -r requirements.txt
 ```
 
+## Quick Demo (`example_room`)
+
+This repo includes a runnable sample IFC model:
+
+- `example_room/simple-room.ifc`
+- `example_room/parsed_output/*` (CSV outputs + `viewer/model.glb` + `viewer/object_index.json`)
+
+Run the viewer directly with the bundled sample:
+
+```bash
+GRAPH_STORE_MODE=csv \
+GRAPH_OUTPUT_DIR=/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output \
+VIEWER_INDEX_PATH=/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output/viewer/object_index.json \
+VIEWER_FILES_DIR=/Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output/viewer \
+FRONTEND_DIR=/Users/zijian/Desktop/IFCGraphViewer/frontend \
+VIEWER_MODEL_URL=/viewer-files/model.glb \
+python -m uvicorn backend.app:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+Open:
+
+1. `http://127.0.0.1:8000/`
+2. `http://127.0.0.1:8000/docs`
+
+To regenerate `example_room/parsed_output` from IFC, use `IFC2StructuredData` on branch `dev/pm`:
+
+```bash
+cd /Users/zijian/Desktop/IFC2StructuredData
+git checkout dev/pm
+python ifc2structureddata.py \
+  /Users/zijian/Desktop/IFCGraphViewer/example_room/simple-room.ifc \
+  /Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output
+
+cd /Users/zijian/Desktop/IFCGraphViewer
+python scripts/build_viewer_assets.py \
+  /Users/zijian/Desktop/IFCGraphViewer/example_room/simple-room.ifc \
+  /Users/zijian/Desktop/IFCGraphViewer/example_room/parsed_output \
+  --threads 4
+```
+
 ## Core Workflows
 
 ### 1) Build graph dataset / import to Neo4j

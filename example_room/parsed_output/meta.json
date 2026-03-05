@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "model_guid": "1RJW9X$0v41w0khmPgA1_c",
+    "export_date": "2026-03-05 15:32:44",
+    "source": "IFC4X3_ADD2",
+    "application_name": "Autodesk Revit 2025 (ENU)",
+    "application_version": "2025",
+    "file_size_mb": 0.4,
+    "object_count": 16,
+    "units": {
+      "length_unit": "mm",
+      "area_unit": "square_metre",
+      "volume_unit": "Unknown",
+      "angle_unit": "degree",
+      "mass_unit": "Unknown"
+    },
+    "geometry_units": {
+      "note": "OBJ geometry files contain vertices in world coordinates (meters). Property values remain in original IFC units as specified above.",
+      "vertices": "meters (world coordinates)",
+      "format": "OBJ + MTL per element",
+      "properties": "original IFC units (see length_unit)"
+    },
+    "processing_info": {
+      "processing_time": 0.0,
+      "processed_date": "2026-03-05T16:13:56.941987"
+    }
+  }
+}

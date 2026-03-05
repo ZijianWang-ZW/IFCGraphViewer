@@ -1,0 +1,13 @@
+GlobalId,ifc_type,method,definition_id,instance_params
+0N306lLjTEow86rs_mTf9V,IfcBuildingElementProxy,mapped,1,"{""mapping_target"": {""type"": ""IfcCartesianTransformationOperator3D"", ""local_origin"": [0.0, 0.0, 0.0], ""scale"": 1.0}}"
+0N306lLjTEow86rs_mTf9G,IfcBuildingElementProxy,mapped,2,"{""mapping_target"": {""type"": ""IfcCartesianTransformationOperator3D"", ""local_origin"": [0.0, 0.0, 0.0], ""scale"": 1.0}}"
+0N306lLjTEow86rs_mTf9H,IfcBuildingElementProxy,mapped,3,"{""mapping_target"": {""type"": ""IfcCartesianTransformationOperator3D"", ""local_origin"": [0.0, 0.0, 0.0], ""scale"": 1.0}}"
+0N306lLjTEow86rs_mTfAt,IfcDoor,mapped,4,"{""mapping_target"": {""type"": ""IfcCartesianTransformationOperator3D"", ""local_origin"": [0.0, 0.0, 0.0], ""scale"": 1.0}}"
+0N306lLjTEow86rs_mTfEb,IfcSlab,extrusion,5,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [2500.0, 2500.0, 0.0], ""axis"": [0.0, 0.0, -1.0], ""ref_direction"": [0.0, 1.0, 0.0]}}"
+0N306lLjTEow86rs_mTer6,IfcWall,extrusion,6,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": null, ""ref_direction"": null}}"
+0N306lLjTEow86rs_mTeqH,IfcWall,extrusion,7,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": null, ""ref_direction"": null}}"
+0N306lLjTEow86rs_mTfBC,IfcWall,extrusion,7,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": null, ""ref_direction"": null}}"
+0N306lLjTEow86rs_mTfAZ,IfcWall,extrusion,8,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": null, ""ref_direction"": null}}"
+0N306lLjTEow86rs_mTf9S,IfcWindow,mapped,9,"{""mapping_target"": {""type"": ""IfcCartesianTransformationOperator3D"", ""local_origin"": [0.0, 0.0, 0.0], ""scale"": 1.0}}"
+0sjD$MI0R3RskosXD8RoJK,IfcOpeningElement,extrusion,10,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": [0.0, 1.0, 0.0], ""ref_direction"": [0.0, 0.0, 1.0]}}"
+1pA8QT2Zra$RmsJqunAOTm,IfcOpeningElement,extrusion,11,"{""position"": {""type"": ""IfcAxis2Placement3D"", ""location"": [0.0, 0.0, 0.0], ""axis"": [0.0, 1.0, 0.0], ""ref_direction"": [0.0, 0.0, 1.0]}}"
